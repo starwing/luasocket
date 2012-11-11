@@ -8,15 +8,12 @@
 -----------------------------------------------------------------------------
 -- Declare module
 -----------------------------------------------------------------------------
-local string = require("string")
-local base = _G
-local table = require("table")
-module("socket.url")
+local M = {}
 
 -----------------------------------------------------------------------------
 -- Module version
 -----------------------------------------------------------------------------
-_VERSION = "URL 1.0.1"
+M._VERSION = "URL 1.0.1"
 
 -----------------------------------------------------------------------------
 -- Encodes a string into its escaped hexadecimal representation
@@ -25,7 +22,7 @@ _VERSION = "URL 1.0.1"
 -- Returns
 --   escaped representation of string binary
 -----------------------------------------------------------------------------
-function escape(s)
+function M.escape(s)
     return string.gsub(s, "([^A-Za-z0-9_])", function(c)
         return string.format("%%%02x", string.byte(c))
     end)
@@ -41,7 +38,7 @@ end
 -----------------------------------------------------------------------------
 local function make_set(t)
 	local s = {}
-	for i,v in base.ipairs(t) do
+	for i,v in ipairs(t) do
 		s[t[i]] = 1
 	end
 	return s
@@ -68,9 +65,9 @@ end
 -- Returns
 --   escaped representation of string binary
 -----------------------------------------------------------------------------
-function unescape(s)
+function M.unescape(s)
     return string.gsub(s, "%%(%x%x)", function(hex)
-        return string.char(base.tonumber(hex, 16))
+        return string.char(tonumber(hex, 16))
     end)
 end
 
@@ -121,10 +118,10 @@ end
 -- Obs:
 --   the leading '/' in {/<path>} is considered part of <path>
 -----------------------------------------------------------------------------
-function parse(url, default)
+function M.parse(url, default)
     -- initialize default parameters
     local parsed = {}
-    for i,v in base.pairs(default or parsed) do parsed[i] = v end
+    for i,v in pairs(default or parsed) do parsed[i] = v end
     -- empty url is parsed to nil
     if not url or url == "" then return nil, "invalid url" end
     -- remove whitespace
@@ -177,7 +174,7 @@ end
 -- Returns
 --   a stringing with the corresponding URL
 -----------------------------------------------------------------------------
-function build(parsed)
+function M.build(parsed)
     local ppath = parse_path(parsed.path or "")
     local url = build_path(ppath)
     if parsed.params then url = url .. ";" .. parsed.params end
@@ -210,8 +207,8 @@ end
 -- Returns
 --   corresponding absolute url
 -----------------------------------------------------------------------------
-function absolute(base_url, relative_url)
-    if base.type(base_url) == "table" then
+function M.absolute(base_url, relative_url)
+    if type(base_url) == "table" then
         base_parsed = base_url
         base_url = build(base_parsed)
     else
@@ -249,7 +246,7 @@ end
 -- Returns
 --   segment: a table with one entry per segment
 -----------------------------------------------------------------------------
-function parse_path(path)
+function M.parse_path(path)
 	local parsed = {}
 	path = path or ""
 	--path = string.gsub(path, "%s", "")
@@ -270,7 +267,7 @@ end
 -- Returns
 --   path: corresponding path stringing
 -----------------------------------------------------------------------------
-function build_path(parsed, unsafe)
+function M.build_path(parsed, unsafe)
 	local path = ""
 	local n = table.getn(parsed)
 	if unsafe then
@@ -295,3 +292,5 @@ function build_path(parsed, unsafe)
 	if parsed.is_absolute then path = "/" .. path end
 	return path
 end
+
+return M

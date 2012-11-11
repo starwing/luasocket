@@ -8,26 +8,23 @@
 -----------------------------------------------------------------------------
 -- Declare module
 -----------------------------------------------------------------------------
-local string = require("string")
-local table = require("table")
-local base = _G
-module("ltn12")
+local M = {}
 
-filter = {}
-source = {}
-sink = {}
-pump = {}
+local filter = {}
+local source = {}
+local sink = {}
+local pump = {}
 
 -- 2048 seems to be better in windows...
-BLOCKSIZE = 2048
-_VERSION = "LTN12 1.0.1"
+M.BLOCKSIZE = 2048
+M._VERSION = "LTN12 1.0.1"
 
 -----------------------------------------------------------------------------
 -- Filter stuff
 -----------------------------------------------------------------------------
 -- returns a high level filter that cycles a low-level filter
 function filter.cycle(low, ctx, extra)
-    base.assert(low)
+    assert(low)
     return function(chunk)
         local ret
         ret, ctx = low(ctx, chunk, extra)
@@ -60,7 +57,7 @@ function filter.chain(...)
                 elseif chunk then
                     if index == n then return chunk
                     else index = index + 1 end
-                else base.error("filter returned inappropriate nil") end
+                else error("filter returned inappropriate nil") end
             end
         end
     end
@@ -89,7 +86,7 @@ end
 function source.file(handle, io_err)
     if handle then
         return function()
-            local chunk = handle:read(BLOCKSIZE)
+            local chunk = handle:read(M.BLOCKSIZE)
             if not chunk then handle:close() end
             return chunk
         end
@@ -98,7 +95,7 @@ end
 
 -- turns a fancy source into a simple source
 function source.simplify(src)
-    base.assert(src)
+    assert(src)
     return function()
         local chunk, err_or_new = src()
         src = err_or_new or src
@@ -112,8 +109,8 @@ function source.string(s)
     if s then
         local i = 1
         return function()
-            local chunk = string.sub(s, i, i+BLOCKSIZE-1)
-            i = i + BLOCKSIZE
+            local chunk = string.sub(s, i, i+M.BLOCKSIZE-1)
+            i = i + M.BLOCKSIZE
             if chunk ~= "" then return chunk
             else return nil end
         end
@@ -122,7 +119,7 @@ end
 
 -- creates rewindable source
 function source.rewind(src)
-    base.assert(src)
+    assert(src)
     local t = {}
     return function(chunk)
         if not chunk then
@@ -136,13 +133,13 @@ function source.rewind(src)
 end
 
 function source.chain(src, f)
-    base.assert(src and f)
+    assert(src and f)
     local last_in, last_out = "", ""
     local state = "feeding"
     local err
     return function()
         if not last_out then
-            base.error('source is empty!', 2)
+            error('source is empty!', 2)
         end
         while true do
             if state == "feeding" then
@@ -151,7 +148,7 @@ function source.chain(src, f)
                 last_out = f(last_in)
                 if not last_out then
                     if last_in then
-                        base.error('filter returned inappropriate nil')
+                        error('filter returned inappropriate nil')
                     else
                         return nil
                     end
@@ -166,11 +163,11 @@ function source.chain(src, f)
                     if last_in == "" then
                         state = "feeding"
                     else
-                        base.error('filter returned ""')
+                        error('filter returned ""')
                     end
                 elseif not last_out then
                     if last_in then
-                        base.error('filter returned inappropriate nil')
+                        error('filter returned inappropriate nil')
                     else
                         return nil
                     end
@@ -212,7 +209,7 @@ end
 
 -- turns a fancy sink into a simple sink
 function sink.simplify(snk)
-    base.assert(snk)
+    assert(snk)
     return function(chunk, err)
         local ret, err_or_new = snk(chunk, err)
         if not ret then return nil, err_or_new end
@@ -251,7 +248,7 @@ end
 
 -- chains a sink with a filter
 function sink.chain(f, snk)
-    base.assert(f and snk)
+    assert(f and snk)
     return function(chunk, err)
         if chunk ~= "" then
             local filtered = f(chunk)
@@ -279,7 +276,7 @@ end
 
 -- pumps all data from a source to a sink, using a step function
 function pump.all(src, snk, step)
-    base.assert(src and snk)
+    assert(src and snk)
     step = step or pump.step
     while true do
         local ret, err = step(src, snk)
@@ -290,3 +287,9 @@ function pump.all(src, snk, step)
     end
 end
 
+M.filter = filter
+M.source = source
+M.sink = sink
+M.pump = pump
+
+return M

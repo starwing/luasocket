@@ -8,24 +8,21 @@
 -----------------------------------------------------------------------------
 -- Declare module and import dependencies
 -------------------------------------------------------------------------------
-local socket = require("socket")
-local url = require("socket.url")
-local ltn12 = require("ltn12")
-local mime = require("mime")
-local string = require("string")
-local base = _G
-local table = require("table")
-module("socket.http")
+local socket = require "socket"
+local url    = require "socket.url"
+local ltn12  = require "ltn12"
+local mime   = require "mime"
+local M = {}
 
 -----------------------------------------------------------------------------
 -- Program constants
 -----------------------------------------------------------------------------
 -- connection timeout in seconds
-TIMEOUT = 60
+M.TIMEOUT = 60
 -- default port for document retrieval
-PORT = 80
+M.PORT = 80
 -- user agent field sent in request
-USERAGENT = socket._VERSION
+M.USERAGENT = socket._VERSION
 
 -----------------------------------------------------------------------------
 -- Reads MIME headers from a connection, unfolding where needed
@@ -62,7 +59,7 @@ end
 -- Extra sources and sinks
 -----------------------------------------------------------------------------
 socket.sourcet["http-chunked"] = function(sock, headers)
-    return base.setmetatable({
+    return setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
     }, {
@@ -70,7 +67,7 @@ socket.sourcet["http-chunked"] = function(sock, headers)
             -- get chunk size, skip extention
             local line, err = sock:receive()
             if err then return nil, err end
-            local size = base.tonumber(string.gsub(line, ";.*", ""), 16)
+            local size = tonumber(string.gsub(line, ";.*", ""), 16)
             if not size then return nil, "invalid chunk size" end
             -- was it the last chunk?
             if size > 0 then
@@ -88,7 +85,7 @@ socket.sourcet["http-chunked"] = function(sock, headers)
 end
 
 socket.sinkt["http-chunked"] = function(sock)
-    return base.setmetatable({
+    return setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
     }, {
@@ -105,15 +102,15 @@ end
 -----------------------------------------------------------------------------
 local metat = { __index = {} }
 
-function open(host, port, create)
+function M.open(host, port, create)
     -- create socket with user connect function, or with default
     local c = socket.try((create or socket.tcp)())
-    local h = base.setmetatable({ c = c }, metat)
+    local h = setmetatable({ c = c }, metat)
     -- create finalized try
     h.try = socket.newtry(function() h:close() end)
     -- set timeout before connecting
-    h.try(c:settimeout(TIMEOUT))
-    h.try(c:connect(host, port or PORT))
+    h.try(c:settimeout(M.TIMEOUT))
+    h.try(c:connect(host, port or M.PORT))
     -- here everything worked
     return h
 end
@@ -125,7 +122,7 @@ end
 
 function metat.__index:sendheaders(headers)
     local h = "\r\n"
-    for i, v in base.pairs(headers) do
+    for i, v in pairs(headers) do
         h = i .. ": " .. v .. "\r\n" .. h
     end
     self.try(self.c:send(h))
@@ -144,7 +141,7 @@ end
 function metat.__index:receivestatusline()
     local status = self.try(self.c:receive())
     local code = socket.skip(2, string.find(status, "HTTP/%d*%.%d* (%d%d%d)"))
-    return self.try(base.tonumber(code), status)
+    return self.try(tonumber(code), status)
 end
 
 function metat.__index:receiveheaders()
@@ -154,11 +151,11 @@ end
 function metat.__index:receivebody(headers, sink, step)
     sink = sink or ltn12.sink.null()
     step = step or ltn12.pump.step
-    local length = base.tonumber(headers["content-length"])
+    local length = tonumber(headers["content-length"])
     local t = headers["transfer-encoding"] -- shortcut
     local mode = "default" -- connection close
     if t and t ~= "identity" then mode = "http-chunked"
-    elseif base.tonumber(headers["content-length"]) then mode = "by-length" end
+    elseif tonumber(headers["content-length"]) then mode = "by-length" end
     return self.try(ltn12.pump.all(socket.source(mode, self.c, length),
         sink, step))
 end
@@ -197,7 +194,7 @@ end
 local function adjustheaders(reqt)
     -- default headers
     local lower = {
-        ["user-agent"] = USERAGENT,
+        ["user-agent"] = M.USERAGENT,
         ["host"] = reqt.host,
         ["connection"] = "close, TE",
         ["te"] = "trailers"
@@ -208,7 +205,7 @@ local function adjustheaders(reqt)
             "Basic " ..  (mime.b64(reqt.user .. ":" .. reqt.password))
     end
     -- override with user headers
-    for i,v in base.pairs(reqt.headers or lower) do
+    for i,v in pairs(reqt.headers or lower) do
         lower[string.lower(i)] = v
     end
     return lower
@@ -217,7 +214,7 @@ end
 -- default url parts
 local default = {
     host = "",
-    port = PORT,
+    port = M.PORT,
     path ="/",
     scheme = "http"
 }
@@ -226,10 +223,10 @@ local function adjustrequest(reqt)
     -- parse url if provided
     local nreqt = reqt.url and url.parse(reqt.url, default) or {}
     -- explicit components override url
-    for i,v in base.pairs(reqt) do nreqt[i] = v end
+    for i,v in pairs(reqt) do nreqt[i] = v end
     if nreqt.port == "" then nreqt.port = 80 end
     socket.try(nreqt.host and nreqt.host ~= "", 
-        "invalid host '" .. base.tostring(nreqt.host) .. "'")
+        "invalid host '" .. tostring(nreqt.host) .. "'")
     -- compute uri if user hasn't overriden
     nreqt.uri = reqt.uri or adjusturi(nreqt)
     -- ajust host and port if there is a proxy
@@ -279,7 +276,7 @@ function trequest(reqt)
     -- we loop until we get what we want, or
     -- until we are sure there is no way to get it
     local nreqt = adjustrequest(reqt)
-    local h = open(nreqt.host, nreqt.port, nreqt.create)
+    local h = M.open(nreqt.host, nreqt.port, nreqt.create)
     -- send request line and headers
     h:sendrequestline(nreqt.method, nreqt.uri)
     h:sendheaders(nreqt.headers)
@@ -326,7 +323,9 @@ local function srequest(u, b)
     return table.concat(t), code, headers, status
 end
 
-request = socket.protect(function(reqt, body)
-    if base.type(reqt) == "string" then return srequest(reqt, body)
+M.request = socket.protect(function(reqt, body)
+    if type(reqt) == "string" then return srequest(reqt, body)
     else return trequest(reqt) end
 end)
+
+return M

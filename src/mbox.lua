@@ -1,6 +1,6 @@
 local Public = {}
 
-mbox = Public
+local mbox = Public
 
 function Public.split_message(message_s)
     local message = {}
@@ -86,3 +86,5 @@ function Public.parse_message(message_s)
     message.headers = Public.parse_headers(message.headers)
     return message
 end
+
+return mbox

@@ -8,26 +8,24 @@
 -----------------------------------------------------------------------------
 -- Declare module and import dependencies
 -----------------------------------------------------------------------------
-local base = _G
-local ltn12 = require("ltn12")
-local mime = require("mime.core")
-local string = require("string")
-module("mime")
+local ltn12 = require "ltn12"
+local mime  = require "mime.core"
+local M = {}
 
 -- encode, decode and wrap algorithm tables
-encodet = {}
-decodet = {}
-wrapt = {}
+local encodet = {}
+local decodet = {}
+local wrapt = {}
 
 -- creates a function that chooses a filter by name from a given table
 local function choose(table)
     return function(name, opt1, opt2)
-        if base.type(name) ~= "string" then
+        if type(name) ~= "string" then
             name, opt1, opt2 = "default", name, opt1
         end
         local f = table[name or "nil"]
         if not f then 
-            base.error("unknown key (" .. base.tostring(name) .. ")", 3)
+            error("unknown key (" .. tostring(name) .. ")", 3)
         else return f(opt1, opt2) end
     end
 end
@@ -70,17 +68,23 @@ wrapt['quoted-printable'] = function()
     return ltn12.filter.cycle(qpwrp, 76, 76)
 end
 
+M.encodet = encodet
+M.decodet = decodet
+M.wrapt = wrapt
+
 -- function that choose the encoding, decoding or wrap algorithm
-encode = choose(encodet)
-decode = choose(decodet)
-wrap = choose(wrapt)
+M.encode = choose(encodet)
+M.decode = choose(decodet)
+M.wrap = choose(wrapt)
 
 -- define the end-of-line normalization filter
-function normalize(marker)
+function M.normalize(marker)
     return ltn12.filter.cycle(eol, 0, marker)
 end
 
 -- high level stuffing filter
-function stuff()
+function M.stuff()
     return ltn12.filter.cycle(dot, 2)
 end
+
+return M

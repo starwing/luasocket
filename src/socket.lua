@@ -7,16 +7,12 @@
 -----------------------------------------------------------------------------
 -- Declare module and import dependencies
 -----------------------------------------------------------------------------
-local base = _G
-local string = require("string")
-local math = require("math")
-local socket = require("socket.core")
-module("socket")
+local socket = require "socket.core"
 
 -----------------------------------------------------------------------------
 -- Exported auxiliar functions
 -----------------------------------------------------------------------------
-function connect(address, port, laddress, lport)
+function socket.connect(address, port, laddress, lport)
     local sock, err = socket.tcp()
     if not sock then return nil, err end
     if laddress then
@@ -28,7 +24,7 @@ function connect(address, port, laddress, lport)
     return sock
 end
 
-function bind(host, port, backlog)
+function socket.bind(host, port, backlog)
     local sock, err = socket.tcp()
     if not sock then return nil, err end
     sock:setoption("reuseaddr", true)
@@ -39,15 +35,15 @@ function bind(host, port, backlog)
     return sock
 end
 
-try = newtry()
+socket.try = socket.newtry()
 
-function choose(table)
+function socket.choose(table)
     return function(name, opt1, opt2)
-        if base.type(name) ~= "string" then
+        if type(name) ~= "string" then
             name, opt1, opt2 = "default", name, opt1
         end
         local f = table[name or "nil"]
-        if not f then base.error("unknown key (".. base.tostring(name) ..")", 3)
+        if not f then error("unknown key (".. tostring(name) ..")", 3)
         else return f(opt1, opt2) end
     end
 end
@@ -56,13 +52,13 @@ end
 -- Socket sources and sinks, conforming to LTN12
 -----------------------------------------------------------------------------
 -- create namespaces inside LuaSocket namespace
-sourcet = {}
-sinkt = {}
+local sourcet = {}
+local sinkt = {}
 
-BLOCKSIZE = 2048
+socket.BLOCKSIZE = 2048
 
 sinkt["close-when-done"] = function(sock)
-    return base.setmetatable({
+    return setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
     }, {
@@ -76,7 +72,7 @@ sinkt["close-when-done"] = function(sock)
 end
 
 sinkt["keep-open"] = function(sock)
-    return base.setmetatable({
+    return setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
     }, {
@@ -89,10 +85,8 @@ end
 
 sinkt["default"] = sinkt["keep-open"]
 
-sink = choose(sinkt)
-
 sourcet["by-length"] = function(sock, length)
-    return base.setmetatable({
+    return setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
     }, {
@@ -109,7 +103,7 @@ end
 
 sourcet["until-closed"] = function(sock)
     local done
-    return base.setmetatable({
+    return setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
     }, {
@@ -129,5 +123,9 @@ end
 
 sourcet["default"] = sourcet["until-closed"]
 
-source = choose(sourcet)
+socket.sourcet = sourcet
+socket.sinkt = sinkt
+socket.sink = socket.choose(sinkt)
+socket.source = socket.choose(sourcet)
 
+return socket
