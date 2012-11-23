@@ -26,12 +26,6 @@ static void return_fd(lua_State *L, fd_set *set, t_socket max_fd,
 static void make_assoc(lua_State *L, int tab);
 static int global_select(lua_State *L);
 
-/* functions in library namespace */
-static luaL_reg func[] = {
-    {"select", global_select},
-    {NULL,     NULL}
-};
-
 /*=========================================================================*\
 * Exported functions
 \*=========================================================================*/
@@ -39,7 +33,12 @@ static luaL_reg func[] = {
 * Initializes module
 \*-------------------------------------------------------------------------*/
 int select_open(lua_State *L) {
-    luaL_openlib(L, NULL, func, 0);
+    /* functions in library namespace */
+    static luaL_Reg func[] = {
+        {"select", global_select},
+        {NULL,     NULL}
+    };
+    luaL_setfuncs(L, func, 0);
     return 0;
 }
 

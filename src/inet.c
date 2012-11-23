@@ -20,14 +20,6 @@ static int inet_global_tohostname(lua_State *L);
 static void inet_pushresolved(lua_State *L, struct hostent *hp);
 static int inet_global_gethostname(lua_State *L);
 
-/* DNS functions */
-static luaL_reg func[] = {
-    { "toip", inet_global_toip },
-    { "tohostname", inet_global_tohostname },
-    { "gethostname", inet_global_gethostname},
-    { NULL, NULL}
-};
-
 /*=========================================================================*\
 * Exported functions
 \*=========================================================================*/
@@ -36,9 +28,15 @@ static luaL_reg func[] = {
 \*-------------------------------------------------------------------------*/
 int inet_open(lua_State *L)
 {
+    /* DNS functions */
+    luaL_Reg func[] = {
+        { "toip", inet_global_toip },
+        { "tohostname", inet_global_tohostname },
+        { "gethostname", inet_global_gethostname},
+        { NULL, NULL}
+    };
     lua_pushstring(L, "dns");
-    lua_newtable(L);
-    luaL_openlib(L, NULL, func, 0);
+    luaL_newlib(L, func);
     lua_settable(L, -3);
     return 0;
 }

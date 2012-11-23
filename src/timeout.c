@@ -33,12 +33,6 @@
 static int timeout_lua_gettime(lua_State *L);
 static int timeout_lua_sleep(lua_State *L);
 
-static luaL_reg func[] = {
-    { "gettime", timeout_lua_gettime },
-    { "sleep", timeout_lua_sleep },
-    { NULL, NULL }
-};
-
 /*=========================================================================*\
 * Exported functions.
 \*=========================================================================*/
@@ -144,7 +138,12 @@ double timeout_gettime(void) {
 * Initializes module
 \*-------------------------------------------------------------------------*/
 int timeout_open(lua_State *L) {
-    luaL_openlib(L, NULL, func, 0);
+    luaL_Reg func[] = {
+        { "gettime", timeout_lua_gettime },
+        { "sleep", timeout_lua_sleep },
+        { NULL, NULL }
+    };
+    luaL_setfuncs(L, func, 0);
     return 0;
 }
 

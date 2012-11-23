@@ -38,39 +38,37 @@ static int meth_dirty(lua_State *L);
 static int meth_getstats(lua_State *L);
 static int meth_setstats(lua_State *L);
 
-/* serial object methods */
-static luaL_reg un[] = {
-    {"__gc",        meth_close},
-    {"__tostring",  auxiliar_tostring},
-    {"close",       meth_close},
-    {"dirty",       meth_dirty},
-    {"getfd",       meth_getfd},
-    {"getstats",    meth_getstats},
-    {"setstats",    meth_setstats},
-    {"receive",     meth_receive},
-    {"send",        meth_send},
-    {"setfd",       meth_setfd},
-    {"settimeout",  meth_settimeout},
-    {NULL,          NULL}
-};
-
-/* our socket creation function */
-static luaL_reg func[] = {
-    {"serial", global_create},
-    {NULL,          NULL}
-};
-
 
 /*-------------------------------------------------------------------------*\
 * Initializes module
 \*-------------------------------------------------------------------------*/
 int luaopen_socket_serial(lua_State *L) {
+    /* serial object methods */
+    luaL_Reg un[] = {
+        {"__gc",        meth_close},
+        {"__tostring",  auxiliar_tostring},
+        {"close",       meth_close},
+        {"dirty",       meth_dirty},
+        {"getfd",       meth_getfd},
+        {"getstats",    meth_getstats},
+        {"setstats",    meth_setstats},
+        {"receive",     meth_receive},
+        {"send",        meth_send},
+        {"setfd",       meth_setfd},
+        {"settimeout",  meth_settimeout},
+        {NULL,          NULL}
+    };
+    /* our socket creation function */
+    luaL_Reg func[] = {
+        {"serial", global_create},
+        {NULL,          NULL}
+    };
     /* create classes */
     auxiliar_newclass(L, "serial{client}", un);
     /* create class groups */
     auxiliar_add2group(L, "serial{client}", "serial{any}");
     /* make sure the function ends up in the package table */
-    luaL_openlib(L, "socket", func, 0);
+    lua_setfuncs(L, func, 0);
     /* return the function instead of the 'socket' table */
     lua_pushstring(L, "serial");
     lua_gettable(L, -2);

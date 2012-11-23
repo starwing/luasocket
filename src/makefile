@@ -25,7 +25,8 @@ SOCKET_OBJS:= \
 	udp.o \
 	except.o \
 	select.o \
-	usocket.o 
+	wsocket.o \
+	#usocket.o 
 
 #------
 # Modules belonging mime-core
@@ -61,10 +62,10 @@ SERIAL_OBJS:=\
 all: $(SOCKET_SO) $(MIME_SO) 
 
 $(SOCKET_SO): $(SOCKET_OBJS)
-	$(LD) $(LDFLAGS) -o $@ $(SOCKET_OBJS)
+	$(LD) -o $@ $(SOCKET_OBJS) $(LDFLAGS)
 
 $(MIME_SO): $(MIME_OBJS)
-	$(LD) $(LDFLAGS) -o $@ $(MIME_OBJS)
+	$(LD) -o $@ $(MIME_OBJS) $(LDFLAGS)
 
 all-unix: all $(UNIX_SO) $(SERIAL_SO)
 

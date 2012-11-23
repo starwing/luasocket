@@ -106,7 +106,7 @@ int opt_ip_multicast_loop(lua_State *L, p_socket ps)
 int opt_linger(lua_State *L, p_socket ps)
 {
     struct linger li;                      /* obj, name, table */
-    if (!lua_istable(L, 3)) luaL_typerror(L, 3, lua_typename(L, LUA_TTABLE));
+    luaL_checktype(L, 3, LUA_TTABLE);
     lua_pushstring(L, "on");
     lua_gettable(L, 3);
     if (!lua_isboolean(L, -1)) 
@@ -157,7 +157,7 @@ int opt_get_linger(lua_State *L, p_socket ps)
 static int opt_setmembership(lua_State *L, p_socket ps, int level, int name)
 {
     struct ip_mreq val;                   /* obj, name, table */
-    if (!lua_istable(L, 3)) luaL_typerror(L, 3, lua_typename(L, LUA_TTABLE));
+    luaL_checktype(L, 3, LUA_TTABLE);
     lua_pushstring(L, "multiaddr");
     lua_gettable(L, 3);
     if (!lua_isstring(L, -1)) 

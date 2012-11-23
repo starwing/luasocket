@@ -80,7 +80,9 @@ int buffer_meth_send(lua_State *L, p_buffer buf) {
     const char *data = luaL_checklstring(L, 2, &size);
     long start = (long) luaL_optnumber(L, 3, 1);
     long end = (long) luaL_optnumber(L, 4, -1);
+#ifdef LUASOCKET_DEBUG
     p_timeout tm = timeout_markstart(buf->tm);
+#endif
     if (start < 0) start = (long) (size+start+1);
     if (end < 0) end = (long) (size+end+1);
     if (start < 1) start = (long) 1;
@@ -111,7 +113,9 @@ int buffer_meth_receive(lua_State *L, p_buffer buf) {
     luaL_Buffer b;
     size_t size;
     const char *part = luaL_optlstring(L, 3, "", &size);
+#ifdef LUASOCKET_DEBUG
     p_timeout tm = timeout_markstart(buf->tm);
+#endif
     /* initialize buffer with optional extra prefix 
      * (useful for concatenating previous partial results) */
     luaL_buffinit(L, &b);
@@ -225,7 +229,7 @@ static int recvline(p_buffer buf, luaL_Buffer *b) {
         pos = 0;
         while (pos < count && data[pos] != '\n') {
             /* we ignore all \r's */
-            if (data[pos] != '\r') luaL_putchar(b, data[pos]);
+            if (data[pos] != '\r') luaL_addchar(b, data[pos]);
             pos++;
         }
         if (pos < count) { /* found '\n' */

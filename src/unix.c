@@ -39,7 +39,7 @@ static const char *unix_tryconnect(p_unix un, const char *path);
 static const char *unix_trybind(p_unix un, const char *path);
 
 /* unix object methods */
-static luaL_reg un[] = {
+static luaL_Reg un[] = {
     {"__gc",        meth_close},
     {"__tostring",  auxiliar_tostring},
     {"accept",      meth_accept},
@@ -71,7 +71,7 @@ static t_opt opt[] = {
 };
 
 /* our socket creation function */
-static luaL_reg func[] = {
+static luaL_Reg func[] = {
     {"unix", global_create},
     {NULL,          NULL}
 };
@@ -90,7 +90,7 @@ int luaopen_socket_unix(lua_State *L) {
     auxiliar_add2group(L, "unix{client}", "unix{any}");
     auxiliar_add2group(L, "unix{server}", "unix{any}");
     /* make sure the function ends up in the package table */
-    luaL_openlib(L, "socket", func, 0);
+    luaL_newlib(L, func);
     /* return the function instead of the 'socket' table */
     lua_pushstring(L, "unix");
     lua_gettable(L, -2);

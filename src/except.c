@@ -20,13 +20,6 @@ static int protected_(lua_State *L);
 static int finalize(lua_State *L);
 static int do_nothing(lua_State *L);
 
-/* except functions */
-static luaL_reg func[] = {
-    {"newtry",    global_newtry},
-    {"protect",   global_protect},
-    {NULL,        NULL}
-};
-
 /*-------------------------------------------------------------------------*\
 * Try factory
 \*-------------------------------------------------------------------------*/
@@ -94,6 +87,12 @@ static int global_protect(lua_State *L) {
 * Init module
 \*-------------------------------------------------------------------------*/
 int except_open(lua_State *L) {
-    luaL_openlib(L, NULL, func, 0);
+    /* except functions */
+    luaL_Reg func[] = {
+        {"newtry",    global_newtry},
+        {"protect",   global_protect},
+        {NULL,        NULL}
+    };
+    luaL_setfuncs(L, func, 0);
     return 0;
 }

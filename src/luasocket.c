@@ -20,8 +20,8 @@
 #include "lua.h"
 #include "lauxlib.h"
 
-#if !defined(LUA_VERSION_NUM) || (LUA_VERSION_NUM < 501)
-#include "compat-5.1.h"
+#if !defined(LUA_VERSION_NUM) || (LUA_VERSION_NUM < 502)
+#include "compat-5.2.h"
 #endif
 
 /*=========================================================================*\
@@ -45,27 +45,6 @@ static int global_unload(lua_State *L);
 static int base_open(lua_State *L);
 
 /*-------------------------------------------------------------------------*\
-* Modules and functions
-\*-------------------------------------------------------------------------*/
-static const luaL_reg mod[] = {
-    {"auxiliar", auxiliar_open},
-    {"except", except_open},
-    {"timeout", timeout_open},
-    {"buffer", buffer_open},
-    {"inet", inet_open},
-    {"tcp", tcp_open},
-    {"udp", udp_open},
-    {"select", select_open},
-    {NULL, NULL}
-};
-
-static luaL_reg func[] = {
-    {"skip",      global_skip},
-    {"__unload",  global_unload},
-    {NULL,        NULL}
-};
-
-/*-------------------------------------------------------------------------*\
 * Skip a few arguments
 \*-------------------------------------------------------------------------*/
 static int global_skip(lua_State *L) {
@@ -87,32 +66,48 @@ static int global_unload(lua_State *L) {
 * Setup basic stuff.
 \*-------------------------------------------------------------------------*/
 static int base_open(lua_State *L) {
-    if (socket_open()) {
-        /* export functions (and leave namespace table on top of stack) */
-        luaL_openlib(L, "socket", func, 0);
+    luaL_Reg func[] = {
+        {"skip",      global_skip},
+        {"__unload",  global_unload},
+        {NULL,        NULL}
+    };
+
+    if (!socket_open())
+        return luaL_error(L, "unable to initialize library");
+
+    /* export functions (and leave namespace table on top of stack) */
+    luaL_newlib(L, func);
 #ifdef LUASOCKET_DEBUG
-        lua_pushstring(L, "_DEBUG");
-        lua_pushboolean(L, 1);
-        lua_rawset(L, -3);
+    lua_pushstring(L, "_DEBUG");
+    lua_pushboolean(L, 1);
+    lua_rawset(L, -3);
 #endif
-        /* make version string available to scripts */
-        lua_pushstring(L, "_VERSION");
-        lua_pushstring(L, LUASOCKET_VERSION);
-        lua_rawset(L, -3);
-        return 1;
-    } else {
-        lua_pushstring(L, "unable to initialize library");
-        lua_error(L);
-        return 0;
-    }
+    /* make version string available to scripts */
+    lua_pushstring(L, "_VERSION");
+    lua_pushstring(L, LUASOCKET_VERSION);
+    lua_rawset(L, -3);
+    return 1;
 }
 
 /*-------------------------------------------------------------------------*\
 * Initializes all library modules.
 \*-------------------------------------------------------------------------*/
 LUASOCKET_API int luaopen_socket_core(lua_State *L) {
+    /* Modules and functions */
+    const luaL_Reg mod[] = {
+        {"auxiliar", auxiliar_open},
+        {"except", except_open},
+        {"timeout", timeout_open},
+        {"buffer", buffer_open},
+        {"inet", inet_open},
+        {"tcp", tcp_open},
+        {"udp", udp_open},
+        {"select", select_open},
+        {NULL, NULL}
+    };
     int i;
     base_open(L);
-    for (i = 0; mod[i].name; i++) mod[i].func(L);
+    for (i = 0; mod[i].name; i++)
+        lua_pop(L, mod[i].func(L));
     return 1;
 }
