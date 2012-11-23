@@ -175,8 +175,8 @@ end
 --   a stringing with the corresponding URL
 -----------------------------------------------------------------------------
 function M.build(parsed)
-    local ppath = parse_path(parsed.path or "")
-    local url = build_path(ppath)
+    local ppath = M.parse_path(parsed.path or "")
+    local url = M.build_path(ppath)
     if parsed.params then url = url .. ";" .. parsed.params end
     if parsed.query then url = url .. "?" .. parsed.query end
 	local authority = parsed.authority
@@ -210,11 +210,11 @@ end
 function M.absolute(base_url, relative_url)
     if type(base_url) == "table" then
         base_parsed = base_url
-        base_url = build(base_parsed)
+        base_url = M.build(base_parsed)
     else
-        base_parsed = parse(base_url)
+        base_parsed = M.parse(base_url)
     end
-    local relative_parsed = parse(relative_url)
+    local relative_parsed = M.parse(relative_url)
     if not base_parsed then return relative_url
     elseif not relative_parsed then return base_url
     elseif relative_parsed.scheme then return relative_url
@@ -235,7 +235,7 @@ function M.absolute(base_url, relative_url)
                     relative_parsed.path)
             end
         end
-        return build(relative_parsed)
+        return M.build(relative_parsed)
     end
 end
 
@@ -251,8 +251,8 @@ function M.parse_path(path)
 	path = path or ""
 	--path = string.gsub(path, "%s", "")
 	string.gsub(path, "([^/]+)", function (s) table.insert(parsed, s) end)
-	for i = 1, table.getn(parsed) do
-		parsed[i] = unescape(parsed[i])
+	for i = 1, #parsed do
+		parsed[i] = M.unescape(parsed[i])
 	end
 	if string.sub(path, 1, 1) == "/" then parsed.is_absolute = 1 end
 	if string.sub(path, -1, -1) == "/" then parsed.is_directory = 1 end
@@ -269,7 +269,7 @@ end
 -----------------------------------------------------------------------------
 function M.build_path(parsed, unsafe)
 	local path = ""
-	local n = table.getn(parsed)
+	local n = #parsed
 	if unsafe then
 		for i = 1, n-1 do
 			path = path .. parsed[i]
